@@ -1,88 +1,53 @@
 import java.util.List;
 import java.util.ArrayList;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+
 
 public class Util  extends Object implements Cloneable{
 
-	//修正すべし
-	public static List<Individual> selectChildren(List<Double> evaluations, List<Individual> parents, int selectNum, Boolean leargeOneIsGood)throws CloneNotSupportedException{
-
+	public static List<Individual> selectChildren(List<Individual> parents, int selectNum, Boolean leargeOneIsGood)throws CloneNotSupportedException{
 		List<Individual> selections = new ArrayList<Individual>();
-		List<Individual> idList = new ArrayList<Individual>();
-		List<Double> evList = new ArrayList<Double>(evaluations);
-		for(Individual id: parents){
-			idList.add(id.clone());
-		}
-		System.out.println("__________________________________");
-		//System.out.println("goodEvaluation");
+		List<Individual> idList = new ArrayList<Individual>(parents);
+
 		for(int i = 0; i<selectNum; i++){
-			double goodEvaluation= evList.get(0);
-			//System.out.println("evaluation"+i+" = "+ goodEvaluation);
+			Individual goodID = idList.get(0);
+			double goodEvaluation= idList.get(0).getEvaluation();
 			if(leargeOneIsGood){
-				for(int k =0; k<evList.size();k++){
-					if(goodEvaluation < evList.get(k)){
-						goodEvaluation = evList.get(k);
+				for(int k =0; k<idList.size();k++){
+					if(goodEvaluation < idList.get(k).getEvaluation()){
+						goodEvaluation = idList.get(k).getEvaluation();
+						goodID = idList.get(k);
 					}
 				}
 			}else{
-				for(int k=0; k<evList.size();k++){
-					if(goodEvaluation > evList.get(k)){
-						goodEvaluation = evList.get(k);
+				for(int k=0; k<idList.size();k++){
+					if(goodEvaluation > idList.get(k).getEvaluation()){
+						goodEvaluation = idList.get(k).getEvaluation();
+						goodID = idList.get(k);
 					}
 				}
 			}
-			int selectedIndex=evList.indexOf(goodEvaluation);
-			Individual goodID = idList.get(selectedIndex).clone();
-			//System.out.println("index = "+selectedIndex);
+			int selectedIndex=idList.indexOf(goodID);
 
-			selections.add(goodID);
-			//System.out.println("ID = "+goodID);
-			System.out.println("EV = "+goodEvaluation);
-			//goodID.printParameter();
-			//System.out.println(Simulator.evaluate(0,goodID.getParameter()));
-			//System.out.println(Simulator.evaluate(0,goodID.getParameter()));
-			idList.remove(goodID);
-			evList.remove(goodEvaluation);
+			selections.add(goodID.clone());
+
+			idList.remove(selectedIndex);
 		}
 
 		return selections;
 	}
-	public static List<Double> selectEvaluation(List<Double> evaluations, int selectNum, Boolean leargeOneIsGood){
-
-		List<Double> selections = new ArrayList<Double>();
-		List<Double> evList = new ArrayList<Double>(evaluations);
-		//System.out.println("__________________________________");
-		//System.out.println("goodEvaluation");
-		for(int i = 0; i<selectNum; i++){
-			double goodEvaluation= evList.get(0);
-			//System.out.println("evaluation"+i+" = "+ goodEvaluation);
-			if(leargeOneIsGood){
-				for(double evaluation: evList){
-					if(goodEvaluation < evaluation){
-						goodEvaluation = evaluation;
-					}
-				}
-			}else{
-				for(Double evaluation: evList){
-					if(goodEvaluation > evaluation){
-						goodEvaluation = evaluation;
-					}
-				}
-			}
 
 
-			selections.add(goodEvaluation);
-			//System.out.println("f(x) = "+goodEvaluation);
-			//goodID.printParameter();
-			evList.remove(goodEvaluation);
-		}
-
-		return selections;
-	}
-	public static List<Individual> makeParetent(int parentNum, double max, double min, int parameterNum){
+	public static List<Individual> makeParetent(int parentNum, double max, double min, int parameterNum, int simulatorNum){
 		List<Individual> parents = new ArrayList<Individual>();
 		for(int i = 0; i < parentNum; i++){
-			parents.add(new Individual(parameterNum, max,min));
+			parents.add(new Individual(parameterNum, max,min, simulatorNum));
+
 		}
 		return parents;
 	}
@@ -96,15 +61,79 @@ public class Util  extends Object implements Cloneable{
 		return;
 	}
 
+	public static void printEvaluate(List<Individual> idList){
+		Integer index=0;
+		for(Individual id: idList){
+			System.out.println("f(x"+index+") = \t"	+ id.getEvaluation());
+			index++;
+		}
+		return;
+	}
+
 	public static List<Double> doSimurate(List<Individual> idList, int simurateNum){
+
 		List<Double> results = new ArrayList<Double>();
-		//System.out.println("__________________________________");
 		for(int i=0;i<idList.size();i++){
 			Double evaluation=Simulator.evaluate(simurateNum, idList.get(i).getParameter());
 			results.add(evaluation);
-			//System.out.println(id.getParameter());
-			//id.printParameter();
+
 		}
+
 		return results;
+	}
+
+	public static void writeCSV(List<Double> aEvaluations, List<Double> anAverageList, String filename){
+		try{
+			File file = new File(filename);
+
+			if (checkBeforeWritefile(file)){
+				PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+				pw.println("世代, 最高評価, 評価平均");
+				for(Integer i = 0; i < aEvaluations.size(); i++){
+					pw.println(i+1 +","+aEvaluations.get(i)+","+anAverageList.get(i));
+				}
+				pw.close();
+			}else{
+				System.out.println("ファイルに書き込めません");
+			}
+		}catch(IOException e){
+			System.out.println(e);
+		}
+	}
+
+	private static boolean checkBeforeWritefile(File file){
+		if (file.exists()){
+			if (file.isFile() && file.canWrite()){
+				return true;
+			}
+		}else{
+			try{
+				file.createNewFile();
+				return true;
+			}catch(IOException e){
+				System.out.println(e);
+			}
+		}
+
+		return false;
+	}
+	public static List<Individual> makeNewParents(int parentsNum, List<Individual> children, double range, int simulatorNum)throws CloneNotSupportedException{
+		List<Individual> newParents = new ArrayList<Individual>();
+		for(int k = 0; k<parentsNum; k++){
+			int index = (int )(children.size() * Math.random());
+			Individual id = children.get(index).clone();
+			id.update(range);
+			id.setEvaluation(Simulator.evaluate(simulatorNum, id.getParameter()));
+			newParents.add(id);
+		}
+		return newParents;
+	}
+
+	public static Double getAverage(List<Individual> idList){
+		Double sum=0.0;
+		for(Individual id: idList){
+			sum += id.getEvaluation();
+		}
+		return sum / idList.size();
 	}
 }

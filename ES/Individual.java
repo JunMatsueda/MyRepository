@@ -1,15 +1,18 @@
 public class Individual extends Object  implements Cloneable{
+
 	protected double[] parameter;
 	protected double max;
 	protected double min;
 	protected int elementNum;
+	protected double evaluation;
 
-	public Individual(int intNum, double maxNum, double minNum){
+	public Individual(int intNum, double maxNum, double minNum, int simulatorNum){
 		elementNum = intNum;
 		parameter = new double[elementNum];
 		max = maxNum;
 		min = minNum;
 		this.makeFirstGeneration();
+		this.setEvaluation(Simulator.evaluate(simulatorNum, this.getParameter()));
 	}
 
 	private void makeFirstGeneration(){
@@ -20,8 +23,6 @@ public class Individual extends Object  implements Cloneable{
 	}
 
 	protected void update(double range){
-		//System.out.println("__________________________________");
-		//Individual id = (Individual) this.clone();
 
 		for(int i = 0; i < elementNum; i++){
 			this.parameter[i]= (this.parameter[i] - range) + 2.0 * range * Math.random();
@@ -30,7 +31,6 @@ public class Individual extends Object  implements Cloneable{
 			}else if(this.parameter[i] < min){
 				this.parameter[i] = min;
 			}
-			//System.out.println(parameter[i]);
 		}
 		return;
 	}
@@ -77,6 +77,14 @@ public class Individual extends Object  implements Cloneable{
 		return;
 	}
 
+	public void setEvaluation(double aEvaluation){
+		evaluation = aEvaluation;
+		return;
+	}
+
+	public double getEvaluation(){
+		return evaluation;
+	}
 	/**
 	*@throws CloneNotSupportedException
 	*
@@ -85,7 +93,6 @@ public class Individual extends Object  implements Cloneable{
 	{
 		Individual anIndividual = (Individual)super.clone();
 		anIndividual.parameter = this.parameter.clone();
-
 
 		return anIndividual;
 	}
